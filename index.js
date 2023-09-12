@@ -1,6 +1,8 @@
 const express=require('express');
 const colors=require('colors');
 const morgan =require('morgan');
+const dotenv=require('dotenv');
+const connectDB=require('./config/db');
 
 const app=express();
 
@@ -10,7 +12,10 @@ app.use(express.json({
    extended:true
 }))
 
+dotenv.config({
+   path:'./config/config.env'
+});
+connectDB();
+const PORT=process.env.PORT||3000;
 
-
-
-app.listen(3000,console.log("Server is running on port 3000".red.underline.bold));
+app.listen(PORT,console.log(`Server is running on port:${PORT}`.red.underline.bold));
