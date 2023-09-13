@@ -6,8 +6,11 @@ const connectDB=require('./config/db');
 
 const app=express();
 
+
+
 app.use(morgan('dev'));
-app.use(express.json({}));
+
+app.use(express.json({}));       //this is inbulit functionality of express to get json data
 app.use(express.json({
    extended:true
 }))
