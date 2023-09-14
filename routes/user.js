@@ -2,6 +2,8 @@ const express=require('express');
 const router=express.Router();
 const User=require('../models/user');
 const bcyrptjs=require('bcryptjs');
+const user_jwt=require('../middleware/user_jwt');
+const jwt=require('jsonwebtoken');
 
 router.post('/register',async(req,res,next)=>{
 
@@ -11,7 +13,7 @@ router.post('/register',async(req,res,next)=>{
         let user_exist=await User.findOne({email:email});
         if(user_exist){
             res.json({
-                success:flase,
+                success:false,
                 msg:'User already exists'
             });
         }
@@ -27,11 +29,28 @@ router.post('/register',async(req,res,next)=>{
         user.avatar="https://gravtar.com/avatar/?s="+size+'&d=retro';
 
         await user.save();
-        res.json({
-            success:true,
-            msg:'User register',
-            user:user,
-        })
+
+        const payload ={
+
+            user:{
+                id:user.id
+            }
+        }
+
+        jwt.sign(payload,process.env.jwtUserSecret,{
+
+            expiresIn:360000
+
+        },(err,token)=>{
+
+            if(err) throw err;
+            res.status(200).json({
+                success:true,
+                token:token
+            });
+
+        });
+       
 
 
     }catch(err){
