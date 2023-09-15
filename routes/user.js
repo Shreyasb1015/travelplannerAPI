@@ -1,6 +1,7 @@
 const express=require('express');
 const router=express.Router();
 const User=require('../models/user');
+const axios=require('axios');
 const bcyrptjs=require('bcryptjs');
 const user_jwt=require('../middleware/user_jwt');
 const jwt=require('jsonwebtoken');
@@ -138,5 +139,79 @@ router.post('/login',async(req,res,next)=>{
     }
     
     });
+
+router.get('/weatherupdate',async(req,res,next)=>{
+
+    try {
+            const city = req.query.city;               // Using req.query to get query parameters
+            const date = new Date(req.query.date);
+            const apiKey = '9251d61fe595211f2990b8464f50cbd8'; 
+            const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}`; //sending the data to api
+        
+            const response = await axios.get(apiUrl);                 // Make an HTTP GET request
+        
+            const weatherData = response.data;                       // Get the response data
+        
+            // Extracting the relevant weather data for the next 5 days
+            const next5DaysWeather = [];
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);                  // Setting hours, minutes, seconds, and milliseconds to zero
+            const uniqueDates = new Set();
+        
+            for (const forecast of weatherData.list) {
+                const forecastDate = new Date(forecast.dt * 1000);
+              
+                
+                if (forecastDate >= currentDate && forecastDate <= date) {
+                  const formattedDate = forecastDate.toISOString().split('T')[0];
+              
+                  // Checking if we haven't processed data for this date yet
+                  if (!uniqueDates.has(formattedDate)) {
+                    uniqueDates.add(formattedDate);
+              
+                    // Calculating the average temperature and using the first description encountered
+                    let totalTemperature = forecast.main.temp;
+                    const descriptions = [forecast.weather[0].description];
+              
+                    // Collecting temperature and descriptions for the same day
+                    for (const innerForecast of weatherData.list) {
+                      const innerForecastDate = new Date(innerForecast.dt * 1000);
+                      const innerFormattedDate = innerForecastDate.toISOString().split('T')[0];
+              
+                      if (innerFormattedDate === formattedDate) {
+                        totalTemperature += innerForecast.main.temp;
+                        descriptions.push(innerForecast.weather[0].description);
+                      }
+                    }
+              
+                    // Calculating the average temperature
+                    const averageTemperature = totalTemperature / descriptions.length;
+              
+                    
+                    next5DaysWeather.push({
+                      date: formattedDate,
+                      temperature: averageTemperature,
+                      description: descriptions[0],
+                    });
+                  }
+                }
+              
+                // Stop collecting data after 5 days
+                if (forecastDate > date) {
+                  break;
+                }
+              }
+        
+            res.status(200).json(next5DaysWeather);
+      } catch (error) {
+            console.error("There is an error in connecting to the API:", error);
+            res.status(500).json({
+            success: false,
+            msg: 'Unable to connect to the API',
+        });
+      }
+    
+
+});
 
 module.exports=router;   //Importing the route into index.js
