@@ -214,4 +214,39 @@ router.get('/weatherupdate',async(req,res,next)=>{
 
 });
 
-module.exports=router;   //Importing the route into index.js
+router.post('/hotelrecommend',async(req,res,next)=>{
+
+    try {
+
+        // Getting the user's budget and location from the request body
+        const { budget, location } = req.body;
+    
+        
+        const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${location}`;
+        const geocodingResponse = await axios.get(geocodingUrl);
+    
+        // Extractting latitude and longitude from the geocoding response
+        const [latitude, longitude] = geocodingResponse.data[0].lat.split(' ').map(parseFloat);
+    
+        // Making a request to url to search for hotels near the location
+        const apiUrl = `https://nominatim.openstreetmap.org/search?format=json&lat=${latitude}&lon=${longitude}&zoom=15&amenity=hotel`;
+    
+        
+        const response = await axios.get(apiUrl);
+        const hotelRecommendations = response.data.slice(0, 5);  //accepting only first 5 inputs
+    
+        // Extractting other relevant information from the results
+        const recommendedHotels = hotelRecommendations.map((hotel) => ({
+          name: hotel.display_name,
+          address: hotel.address,
+        }));
+    
+        res.status(200).json(recommendedHotels);             //sending response
+      } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Internal server error' });       
+      }
+    });
+
+
+module.exports=router;   //Exporting the route into index.js
