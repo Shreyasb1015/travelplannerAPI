@@ -235,7 +235,7 @@ router.post('/hotelrecommend',async(req,res,next)=>{
         const response = await axios.get(apiUrl);
         const hotelRecommendations = response.data.slice(0, 5);  //accepting only first 5 inputs
     
-        // Extractting other relevant information from the results
+        // Extracting other relevant information from the results
         const recommendedHotels = hotelRecommendations.map((hotel) => ({
           name: hotel.display_name,
           address: hotel.address,
@@ -244,9 +244,10 @@ router.post('/hotelrecommend',async(req,res,next)=>{
         res.status(200).json(recommendedHotels);             //sending response
       } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ message: 'Internal server error' });       
+        res.status(500).json({ msg: 'Internal server error' });      
+
       }
     });
 
 
-module.exports=router;   //Exporting the route into index.js
+module.exports=router;   //Exporting all the routes into index.js
