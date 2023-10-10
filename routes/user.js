@@ -2,9 +2,10 @@ const express=require('express');
 const router=express.Router();
 const User=require('../models/user');
 const axios=require('axios');
-const bcyrptjs=require('bcryptjs');
+const bcryptjs=require('bcryptjs');
 const user_jwt=require('../middleware/user_jwt');
 const jwt=require('jsonwebtoken');
+const nodemailer=require('nodemailer');
 
 
 router.get('/',user_jwt,async(req,res,next)=>{
@@ -47,12 +48,30 @@ router.post('/register',async(req,res,next)=>{
         user.email=email;
         user.username=username;
 
-        const salt=await bcyrptjs.genSalt(10);
-        user.password= await bcyrptjs.hash(password,salt);     //hashing the password of user for security
+        const salt=await bcryptjs.genSalt(10);
+        user.password= await bcryptjs.hash(password,salt);     //hashing the password of user for security
         let size=200;
         user.avatar="https://gravtar.com/avatar/?s="+size+'&d=retro';
 
         await user.save();
+
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          auth: {
+              user: 'nia29@ethereal.email',
+              pass: 'YSHgxj5sHKqErwmZCD'
+          }
+      });
+
+        const info = await transporter.sendMail({
+          from: '"TravelPlanner👻" <may.schmidt31@ethereal.email>', // sender address
+          to:user.email, // list of receivers
+          subject: "Welcome Message", // Subject line
+          text: "Thanks for registering in TravelPlanner-App!", // plain text body
+         
+        });
+        
 
         const payload ={
 
@@ -214,40 +233,43 @@ router.get('/weatherupdate',async(req,res,next)=>{
 
 });
 
+    
 router.post('/hotelrecommend',async(req,res,next)=>{
 
-    try {
+  try {
 
-        // Getting the user's budget and location from the request body
-        const { budget, location } = req.body;
-    
-        
-        const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${location}`;
-        const geocodingResponse = await axios.get(geocodingUrl);
-    
-        // Extractting latitude and longitude from the geocoding response
-        const [latitude, longitude] = geocodingResponse.data[0].lat.split(' ').map(parseFloat);
-    
-        // Making a request to url to search for hotels near the location
-        const apiUrl = `https://nominatim.openstreetmap.org/search?format=json&lat=${latitude}&lon=${longitude}&zoom=15&amenity=hotel`;
-    
-        
-        const response = await axios.get(apiUrl);
-        const hotelRecommendations = response.data.slice(0, 5);  //accepting only first 5 inputs
-    
-        // Extracting other relevant information from the results
-        const recommendedHotels = hotelRecommendations.map((hotel) => ({
-          name: hotel.display_name,
-          address: hotel.address,
-        }));
-    
-        res.status(200).json(recommendedHotels);             //sending response
-      } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ msg: 'Internal server error' });      
+      // Getting the user's budget and location from the request body
+      const { budget, location } = req.body;
+  
+      
+      const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${location}`;
+      const geocodingResponse = await axios.get(geocodingUrl);
+  
+      // Extractting latitude and longitude from the geocoding response
+      const [latitude, longitude] = geocodingResponse.data[0].lat.split(' ').map(parseFloat);
+  
+      // Making a request to url to search for hotels near the location
+      const apiUrl = `https://nominatim.openstreetmap.org/search?format=json&lat=${latitude}&lon=${longitude}&zoom=15&amenity=hotel`;
+  
+      
+      const response = await axios.get(apiUrl);
+      const hotelRecommendations = response.data.slice(0, 5);  //accepting only first 5 inputs
+  
+      // Extracting other relevant information from the results
+      const recommendedHotels = hotelRecommendations.map((hotel) => ({
+        name: hotel.display_name,
+        address: hotel.address,
+      }));
+  
+      res.status(200).json(recommendedHotels);             //sending response
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ msg: 'Internal server error' });      
 
-      }
-    });
+    }
+  });
 
 
-module.exports=router;   //Exporting all the routes into index.js
+
+module.exports=router;
+
